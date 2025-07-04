@@ -1,17 +1,17 @@
 // Update these to match your inverter/network.
-#define INVERTER_ME3000				// Uncomment for ME3000
-//#define INVERTER_HYBRID			// Uncomment for Hybrid
+#define INVERTER_ME3000        // Uncomment for ME3000
+//#define INVERTER_HYBRID     // Uncomment for Hybrid
 
 // The device name is used as the MQTT base topic. If you need more than one Sofar2mqtt on your network, give them unique names.
 const char* deviceName = "Sofar2mqtt";
 const char* version = "v2.1.1";
 
-#define WIFI_SSID	"xxxxx"
-#define WIFI_PASSWORD	"xxxxx"
-#define MQTT_SERVER	"mqtt"
-#define MQTT_PORT	1883
-#define MQTT_USERNAME	"auser"			// Empty string for none.
-#define MQTT_PASSWORD	"apassword"
+#define WIFI_SSID "xxxxx"
+#define WIFI_PASSWORD "xxxxx"
+#define MQTT_SERVER "mqtt"
+#define MQTT_PORT 1883
+#define MQTT_USERNAME "auser"     // Empty string for none.
+#define MQTT_PASSWORD "apassword"
 
 /*****
 Sofar2mqtt is a remote control interface for Sofar solar and battery inverters.
@@ -92,14 +92,14 @@ calcCRC by angelo.compagnucci@gmail.com and jpmzometa@gmail.com
 #define SOFAR_SLAVE_ID          0x01
 
 #ifdef INVERTER_ME3000
-#define	MAX_POWER		3000		// ME3000 is 3000W max.
+#define MAX_POWER   3000    // ME3000 is 3000W max.
 #elif defined INVERTER_HYBRID
-#define MAX_POWER		6000
+#define MAX_POWER   6000
 #endif
 
 #define RS485_TRIES 8       // x 50mS to wait for RS485 input chars.
 // Wifi parameters.
-#include <ESP8266WiFi.h>
+#include <WiFi.h>
 const char* wifiName = WIFI_SSID;
 WiFiClient wifi;
 
@@ -110,42 +110,46 @@ PubSubClient mqtt(wifi);
 
 // SoftwareSerial is used to create a second serial port, which will be deidcated to RS485.
 // The built-in serial port remains available for flashing and debugging.
-#include <SoftwareSerial.h>
-#define SERIAL_COMMUNICATION_CONTROL_PIN D5 // Transmission set pin
+
+#define SERIAL_COMMUNICATION_CONTROL_PIN 4  // GPIO4 or any other pin
 #define RS485_TX HIGH
 #define RS485_RX LOW
-#define RXPin        D6  // Serial Receive pin
-#define TXPin        D7  // Serial Transmit pin
-SoftwareSerial RS485Serial(RXPin, TXPin);
+#define RXPin 16  // GPIO16
+#define TXPin 17  // GPIO17
+
+#define LED_BUILTIN 2 // If needed explicitly for ESP32
+
+
+HardwareSerial RS485Serial(1); // Use UART1
 
 // Sofar run states
 #define waiting 0
 #define check 1
 
 #ifdef INVERTER_ME3000
-#define charging		2
-#define checkDischarge		3
-#define discharging		4
-#define epsState		5
-#define faultState		6
-#define permanentFaultState	7
+#define charging    2
+#define checkDischarge    3
+#define discharging   4
+#define epsState    5
+#define faultState    6
+#define permanentFaultState 7
 
-#define HUMAN_CHARGING		"Charging"
-#define HUMAN_DISCHARGING	"Discharge"
+#define HUMAN_CHARGING    "Charging"
+#define HUMAN_DISCHARGING "Discharge"
 
 #elif defined INVERTER_HYBRID
-#define normal			2
-#define epsState		3
-#define faultState		4
-#define permanentFaultState	5
-#define normal1			6
+#define normal      2
+#define epsState    3
+#define faultState    4
+#define permanentFaultState 5
+#define normal1     6
 
 // State names are a bit strange - makes sense to also match to these?
-#define charging		2
-#define discharging		6
+#define charging    2
+#define discharging   6
 
-#define HUMAN_CHARGING		"Normal"
-#define HUMAN_DISCHARGING	"Normal1"
+#define HUMAN_CHARGING    "Normal"
+#define HUMAN_DISCHARGING "Normal1"
 #endif
 
 #define MAX_FRAME_SIZE          64
@@ -159,79 +163,79 @@ unsigned int INVERTER_RUNNINGSTATE;
 bool BATTERYSAVE = false;
 
 // SoFar ME3000 Information Registers
-#define SOFAR_REG_RUNSTATE	0x0200
-#define SOFAR_REG_GRIDV		0x0206
-#define SOFAR_REG_GRIDA		0x0207
-#define SOFAR_REG_GRIDFREQ	0x020c
-#define SOFAR_REG_BATTW		0x020d
-#define SOFAR_REG_BATTV		0x020e
-#define SOFAR_REG_BATTA		0x020f
-#define SOFAR_REG_BATTSOC	0x0210
-#define SOFAR_REG_BATTTEMP	0x0211
-#define SOFAR_REG_GRIDW		0x0212
-#define SOFAR_REG_LOADW		0x0213
-#define SOFAR_REG_SYSIOW	0x0214
-#define SOFAR_REG_PVW		0x0215
-#define SOFAR_REG_PVDAY		0x0218
-#define SOFAR_REG_EXPDAY	0x0219
-#define SOFAR_REG_IMPDAY	0x021a
-#define SOFAR_REG_LOADDAY	0x021b
-#define SOFAR_REG_BATTCYC	0x022c
-#define SOFAR_REG_PVA		0x0236
-#define SOFAR_REG_INTTEMP	0x0238
-#define SOFAR_REG_HSTEMP	0x0239
-#define SOFAR_REG_PV1		0x0252
-#define SOFAR_REG_PV2		0x0255
+#define SOFAR_REG_RUNSTATE  0x0200
+#define SOFAR_REG_GRIDV   0x0206
+#define SOFAR_REG_GRIDA   0x0207
+#define SOFAR_REG_GRIDFREQ  0x020c
+#define SOFAR_REG_BATTW   0x020d
+#define SOFAR_REG_BATTV   0x020e
+#define SOFAR_REG_BATTA   0x020f
+#define SOFAR_REG_BATTSOC 0x0210
+#define SOFAR_REG_BATTTEMP  0x0211
+#define SOFAR_REG_GRIDW   0x0212
+#define SOFAR_REG_LOADW   0x0213
+#define SOFAR_REG_SYSIOW  0x0214
+#define SOFAR_REG_PVW   0x0215
+#define SOFAR_REG_PVDAY   0x0218
+#define SOFAR_REG_EXPDAY  0x0219
+#define SOFAR_REG_IMPDAY  0x021a
+#define SOFAR_REG_LOADDAY 0x021b
+#define SOFAR_REG_BATTCYC 0x022c
+#define SOFAR_REG_PVA   0x0236
+#define SOFAR_REG_INTTEMP 0x0238
+#define SOFAR_REG_HSTEMP  0x0239
+#define SOFAR_REG_PV1   0x0252
+#define SOFAR_REG_PV2   0x0255
 
-#define SOFAR_FN_STANDBY	0x0100
-#define SOFAR_FN_DISCHARGE	0x0101
-#define SOFAR_FN_CHARGE		0x0102
-#define SOFAR_FN_AUTO		0x0103
+#define SOFAR_FN_STANDBY  0x0100
+#define SOFAR_FN_DISCHARGE  0x0101
+#define SOFAR_FN_CHARGE   0x0102
+#define SOFAR_FN_AUTO   0x0103
 
 struct mqtt_status_register
 {
-	uint16_t regnum;
-	String    mqtt_name;
+  uint16_t regnum;
+  String    mqtt_name;
 };
 
 static struct mqtt_status_register  mqtt_status_reads[] =
 {
-	{ SOFAR_REG_RUNSTATE, "running_state" },
-	{ SOFAR_REG_GRIDV, "grid_voltage" },
-	{ SOFAR_REG_GRIDA, "grid_current" },
-	{ SOFAR_REG_GRIDFREQ, "grid_freq" },
-	{ SOFAR_REG_GRIDW, "grid_power" },
-	{ SOFAR_REG_BATTW, "battery_power" },
-	{ SOFAR_REG_BATTV, "battery_voltage" },
-	{ SOFAR_REG_BATTA, "battery_current" },
-	{ SOFAR_REG_SYSIOW, "systemIO_power" },
-	{ SOFAR_REG_BATTSOC, "batterySOC" },
-	{ SOFAR_REG_BATTTEMP, "battery_temp" },
-	{ SOFAR_REG_BATTCYC, "battery_cycles" },
-	{ SOFAR_REG_LOADW, "consumption" },
-	{ SOFAR_REG_PVW, "solarPV" },
-	{ SOFAR_REG_PVA, "solarPVAmps" },
-	{ SOFAR_REG_PVDAY, "today_generation" },
+  { SOFAR_REG_RUNSTATE, "running_state" },
+  { SOFAR_REG_GRIDV, "grid_voltage" },
+  { SOFAR_REG_GRIDA, "grid_current" },
+  { SOFAR_REG_GRIDFREQ, "grid_freq" },
+  { SOFAR_REG_GRIDW, "grid_power" },
+  { SOFAR_REG_BATTW, "battery_power" },
+  { SOFAR_REG_BATTV, "battery_voltage" },
+  { SOFAR_REG_BATTA, "battery_current" },
+  { SOFAR_REG_SYSIOW, "systemIO_power" },
+  { SOFAR_REG_BATTSOC, "batterySOC" },
+  { SOFAR_REG_BATTTEMP, "battery_temp" },
+  { SOFAR_REG_BATTCYC, "battery_cycles" },
+  { SOFAR_REG_LOADW, "consumption" },
+  { SOFAR_REG_PVW, "solarPV" },
+  { SOFAR_REG_PVA, "solarPVAmps" },
+  { SOFAR_REG_PVDAY, "today_generation" },
 #ifdef INVERTER_ME3000
-	{ SOFAR_REG_EXPDAY, "today_exported" },
-	{ SOFAR_REG_IMPDAY, "today_purchase" },
+  { SOFAR_REG_EXPDAY, "today_exported" },
+  { SOFAR_REG_IMPDAY, "today_purchase" },
 #elif defined INVERTER_HYBRID
-	{ SOFAR_REG_PV1, "Solarpv1" },
-	{ SOFAR_REG_PV2, "Solarpv2" },
+  { SOFAR_REG_PV1, "Solarpv1" },
+  { SOFAR_REG_PV2, "Solarpv2" },
 #endif
-	{ SOFAR_REG_LOADDAY, "today_consumption" },
-	{ SOFAR_REG_INTTEMP, "inverter_temp" },
-	{ SOFAR_REG_HSTEMP, "inverter_HStemp" },
+  { SOFAR_REG_LOADDAY, "today_consumption" },
+  { SOFAR_REG_INTTEMP, "inverter_temp" },
+  { SOFAR_REG_HSTEMP, "inverter_HStemp" },
 };
 
 // This is the return object for the sendModbus() function. Since we are a modbus master, we
 // are primarily interested in the responses to our commands.
 struct modbusResponse
 {
-	uint8_t errorLevel;
-	uint8_t data[MAX_FRAME_SIZE];
-	uint8_t dataSize;
-	char* errorMessage;
+  uint8_t errorLevel;
+  uint8_t data[MAX_FRAME_SIZE];
+  uint8_t dataSize;
+  char* errorMessage;
 };
 
 // These timers are used in the main loop.
@@ -258,18 +262,18 @@ Adafruit_SSD1306 display(OLED_RESET);
  */
 bool checkTimer(unsigned long *lastRun, unsigned long interval)
 {
-	unsigned long now = millis();
+  unsigned long now = millis();
 
-	if(*lastRun > now)
-		*lastRun = 0;
+  if(*lastRun > now)
+    *lastRun = 0;
 
-	if(now >= *lastRun + interval)
-	{
-		*lastRun = now;
-		return true;
-	}
+  if(now >= *lastRun + interval)
+  {
+    *lastRun = now;
+    return true;
+  }
 
-	return false;
+  return false;
 }
 
 // Update the OLED. Use "NULL" for no change or "" for an empty line.
@@ -280,260 +284,260 @@ String oledLine4;
 
 void updateOLED(String line1, String line2, String line3, String line4)
 {
-	display.clearDisplay();
-	display.setTextSize(1);
-	display.setTextColor(WHITE);
-	display.setCursor(0,0);
+  display.clearDisplay();
+  display.setTextSize(1);
+  display.setTextColor(WHITE);
+  display.setCursor(0,0);
 
-	if(line1 != "NULL")
-	{
-		display.println(line1);
-		oledLine1 = line1;
-	}
-	else
-		display.println(oledLine1);
+  if(line1 != "NULL")
+  {
+    display.println(line1);
+    oledLine1 = line1;
+  }
+  else
+    display.println(oledLine1);
 
-	display.setCursor(0,12);
+  display.setCursor(0,12);
 
-	if(line2 != "NULL")
-	{
-		display.println(line2);
-		oledLine2 = line2;
-	}
-	else
-		display.println(oledLine2);
+  if(line2 != "NULL")
+  {
+    display.println(line2);
+    oledLine2 = line2;
+  }
+  else
+    display.println(oledLine2);
 
-	display.setCursor(0,24);
+  display.setCursor(0,24);
 
-	if(line3 != "NULL")
-	{
-		display.println(line3);
-		oledLine3 = line3;
-	}
-	else
-		display.println(oledLine3);
+  if(line3 != "NULL")
+  {
+    display.println(line3);
+    oledLine3 = line3;
+  }
+  else
+    display.println(oledLine3);
 
-	display.setCursor(0,36);
+  display.setCursor(0,36);
 
-	if(line4 != "NULL")
-	{
-		display.println(line4);
-		oledLine4 = line4;
-	}
-	else
-		display.println(oledLine4);
+  if(line4 != "NULL")
+  {
+    display.println(line4);
+    oledLine4 = line4;
+  }
+  else
+    display.println(oledLine4);
 
-	display.display();
+  display.display();
 }
 
 // Connect to WiFi
 void setup_wifi()
 {
-	// We start by connecting to a WiFi network
-	Serial.println();
-	Serial.print("Connecting to ");
-	Serial.println(wifiName);
-	updateOLED("NULL", "NULL", "WiFi..", "NULL");
-	WiFi.mode(WIFI_STA);
-	WiFi.begin(wifiName, WIFI_PASSWORD);
+  // We start by connecting to a WiFi network
+  Serial.println();
+  Serial.print("Connecting to ");
+  Serial.println(wifiName);
+  updateOLED("NULL", "NULL", "WiFi..", "NULL");
+  WiFi.mode(WIFI_STA);
+  WiFi.begin(wifiName, WIFI_PASSWORD);
 
-	while (WiFi.status() != WL_CONNECTED)
-	{
-		delay(500);
-		Serial.print(".");
-		updateOLED("NULL", "NULL", "WiFi...", "NULL");
-	}
+  while (WiFi.status() != WL_CONNECTED)
+  {
+    delay(500);
+    Serial.print(".");
+    updateOLED("NULL", "NULL", "WiFi...", "NULL");
+  }
 
-	WiFi.hostname(deviceName);
-	Serial.println("");
-	Serial.print("WiFi connected - ESP IP address: ");
-	Serial.println(WiFi.localIP());
-	updateOLED("NULL", "NULL", "WiFi....", "NULL");
+  WiFi.setHostname(deviceName);
+  Serial.println("");
+  Serial.print("WiFi connected - ESP IP address: ");
+  Serial.println(WiFi.localIP());
+  updateOLED("NULL", "NULL", "WiFi....", "NULL");
 }
 
 int addStateInfo(String &state, uint16_t reg, String human)
 {
-	unsigned int	val;
-	modbusResponse	rs;
+  unsigned int  val;
+  modbusResponse  rs;
 
-	if(readSingleReg(SOFAR_SLAVE_ID, reg, &rs))
-		return -1;
+  if(readSingleReg(SOFAR_SLAVE_ID, reg, &rs))
+    return -1;
 
-	val = ((rs.data[0] << 8) | rs.data[1]);
+  val = ((rs.data[0] << 8) | rs.data[1]);
 
-	if (!( state == "{"))
-		state += ",";
+  if (!( state == "{"))
+    state += ",";
 
-	state += "\"" + human + "\":" + String(val);
-	return 0;
+  state += "\"" + human + "\":" + String(val);
+  return 0;
 }
 
 void sendData()
 {
-	static unsigned long	lastRun = 0;
+  static unsigned long  lastRun = 0;
 
-	// Update all parameters and send to MQTT.
-	if(checkTimer(&lastRun, SEND_INTERVAL))
-	{
-		int	l;
-		String	state = "{";
+  // Update all parameters and send to MQTT.
+  if(checkTimer(&lastRun, SEND_INTERVAL))
+  {
+    int l;
+    String  state = "{";
 
-		for(l = 0; l < sizeof(mqtt_status_reads)/sizeof(struct mqtt_status_register); l++)
-			addStateInfo(state, mqtt_status_reads[l].regnum, mqtt_status_reads[l].mqtt_name);
+    for(l = 0; l < sizeof(mqtt_status_reads)/sizeof(struct mqtt_status_register); l++)
+      addStateInfo(state, mqtt_status_reads[l].regnum, mqtt_status_reads[l].mqtt_name);
 
-		state = state+"}";
+    state = state+"}";
 
-		//Prefix the mqtt topic name with deviceName.
-		String topic(deviceName);
-		topic += "/state";
-		sendMqtt(const_cast<char*>(topic.c_str()), state);
-	}
+    //Prefix the mqtt topic name with deviceName.
+    String topic(deviceName);
+    topic += "/state";
+    sendMqtt(const_cast<char*>(topic.c_str()), state);
+  }
 }
 
 // This function is executed when an MQTT message arrives on a topic that we are subscribed to.
 void mqttCallback(String topic, byte *message, unsigned int length)
 {
-	if(!topic.startsWith(String(deviceName) + "/set/"))
-		return;
+  if(!topic.startsWith(String(deviceName) + "/set/"))
+    return;
 
-	Serial.print("Message arrived on topic: ");
-	Serial.print(topic);
-	Serial.print(". Message: ");
-	String messageTemp;
-	uint16_t fnCode = 0, fnParam = 0;
-	String cmd = topic.substring(topic.lastIndexOf("/") + 1);
+  Serial.print("Message arrived on topic: ");
+  Serial.print(topic);
+  Serial.print(". Message: ");
+  String messageTemp;
+  uint16_t fnCode = 0, fnParam = 0;
+  String cmd = topic.substring(topic.lastIndexOf("/") + 1);
 
-	for(int i = 0; i < length; i++)
-	{
-		Serial.print((char)message[i]);
-		messageTemp += (char)message[i];
-	}
+  for(int i = 0; i < length; i++)
+  {
+    Serial.print((char)message[i]);
+    messageTemp += (char)message[i];
+  }
 
-	Serial.println();
-	int   messageValue = messageTemp.toInt();
-	bool  messageBool = ((messageTemp != "false") && (messageTemp != "battery_save"));
+  Serial.println();
+  int   messageValue = messageTemp.toInt();
+  bool  messageBool = ((messageTemp != "false") && (messageTemp != "battery_save"));
 
-	if(cmd == "standby")
-	{
-		if(messageBool)
-		{
-			fnCode = SOFAR_FN_STANDBY;
-			fnParam = SOFAR_PARAM_STANDBY;
-		}
-	}
-	else if(cmd == "auto")
-	{
-		if(messageBool)
-			fnCode = SOFAR_FN_AUTO;
-		else if(messageTemp == "battery_save")
-			BATTERYSAVE = true;
-	}
-	else if((messageValue > 0) && (messageValue <= MAX_POWER))
-	{
-		fnParam = messageValue;
+  if(cmd == "standby")
+  {
+    if(messageBool)
+    {
+      fnCode = SOFAR_FN_STANDBY;
+      fnParam = SOFAR_PARAM_STANDBY;
+    }
+  }
+  else if(cmd == "auto")
+  {
+    if(messageBool)
+      fnCode = SOFAR_FN_AUTO;
+    else if(messageTemp == "battery_save")
+      BATTERYSAVE = true;
+  }
+  else if((messageValue > 0) && (messageValue <= MAX_POWER))
+  {
+    fnParam = messageValue;
 
-		if(cmd == "charge")
-			fnCode = SOFAR_FN_CHARGE;
-		else if(cmd == "discharge")
-			fnCode = SOFAR_FN_DISCHARGE;
-	}
+    if(cmd == "charge")
+      fnCode = SOFAR_FN_CHARGE;
+    else if(cmd == "discharge")
+      fnCode = SOFAR_FN_DISCHARGE;
+  }
 
-	if(fnCode)
-	{
-		BATTERYSAVE = false;
-		sendPassiveCmd(SOFAR_SLAVE_ID, fnCode, fnParam, cmd);
-	}
+  if(fnCode)
+  {
+    BATTERYSAVE = false;
+    sendPassiveCmd(SOFAR_SLAVE_ID, fnCode, fnParam, cmd);
+  }
 }
 
 void batterySave()
 {
-	static unsigned long	lastRun = 0;
+  static unsigned long  lastRun = 0;
 
-	if(checkTimer(&lastRun, BATTERYSAVE_INTERVAL) && BATTERYSAVE)
-	{
-		modbusResponse  rs;
+  if(checkTimer(&lastRun, BATTERYSAVE_INTERVAL) && BATTERYSAVE)
+  {
+    modbusResponse  rs;
 
-		//Get grid power
-		unsigned int	p = 0;
+    //Get grid power
+    unsigned int  p = 0;
 
-		if(!readSingleReg(SOFAR_SLAVE_ID, SOFAR_REG_GRIDW, &rs))
-			p = ((rs.data[0] << 8) | rs.data[1]);
-		else
-			Serial.println("modbus error");
+    if(!readSingleReg(SOFAR_SLAVE_ID, SOFAR_REG_GRIDW, &rs))
+      p = ((rs.data[0] << 8) | rs.data[1]);
+    else
+      Serial.println("modbus error");
 
-		Serial.print("Grid power: ");
-		Serial.println(p);
-		Serial.print("Battery save mode: ");
+    Serial.print("Grid power: ");
+    Serial.println(p);
+    Serial.print("Battery save mode: ");
 
-		// Switch to auto when any power flows to the grid.
-		// We leave a little wriggle room because once you start charging the battery,
-		// gridPower should be floating just above or below zero.
-		if((p < 65535/2 || p > 65525) && (INVERTER_RUNNINGSTATE != discharging))
-		{
-			//exporting to the grid
-			if(!sendPassiveCmd(SOFAR_SLAVE_ID, SOFAR_FN_AUTO, 0, "bsave_auto"))
-				Serial.println("auto");
-		}
-		else
-		{
-			//importing from the grid
-			if(!sendPassiveCmd(SOFAR_SLAVE_ID, SOFAR_FN_STANDBY, SOFAR_PARAM_STANDBY, "bsave_standby"))
-				Serial.println("standby");
-		}
-	}
+    // Switch to auto when any power flows to the grid.
+    // We leave a little wriggle room because once you start charging the battery,
+    // gridPower should be floating just above or below zero.
+    if((p < 65535/2 || p > 65525) && (INVERTER_RUNNINGSTATE != discharging))
+    {
+      //exporting to the grid
+      if(!sendPassiveCmd(SOFAR_SLAVE_ID, SOFAR_FN_AUTO, 0, "bsave_auto"))
+        Serial.println("auto");
+    }
+    else
+    {
+      //importing from the grid
+      if(!sendPassiveCmd(SOFAR_SLAVE_ID, SOFAR_FN_STANDBY, SOFAR_PARAM_STANDBY, "bsave_standby"))
+        Serial.println("standby");
+    }
+  }
 }
 
 // This function reconnects the ESP8266 to the MQTT broker
 void mqttReconnect() 
 {
-	// Loop until we're reconnected
-	while(true)
-	{
-		mqtt.disconnect();		// Just in case.
-		delay(200);
-		Serial.print("Attempting MQTT connection...");
-		updateOLED("NULL", "connecting", "NULL", "MQTT.");
-		delay(500);
-		updateOLED("NULL", "NULL", "NULL", "MQTT..");
+  // Loop until we're reconnected
+  while(true)
+  {
+    mqtt.disconnect();    // Just in case.
+    delay(200);
+    Serial.print("Attempting MQTT connection...");
+    updateOLED("NULL", "connecting", "NULL", "MQTT.");
+    delay(500);
+    updateOLED("NULL", "NULL", "NULL", "MQTT..");
 
-		// Attempt to connect
-		if(mqtt.connect(mqttClientID, MQTT_USERNAME, MQTT_PASSWORD))
-		{
-			Serial.println("connected");
-			delay(1000);
-			updateOLED("NULL", "NULL", "NULL", "MQTT....");
-			delay(1000);
+    // Attempt to connect
+    if(mqtt.connect(mqttClientID, MQTT_USERNAME, MQTT_PASSWORD))
+    {
+      Serial.println("connected");
+      delay(1000);
+      updateOLED("NULL", "NULL", "NULL", "MQTT....");
+      delay(1000);
 
-			//Set topic names to include the deviceName.
-			String standbyMode(deviceName);
-			standbyMode += "/set/standby";
-			String autoMode(deviceName);
-			autoMode += "/set/auto";
-			String chargeMode(deviceName);
-			chargeMode += "/set/charge";
-			String dischargeMode(deviceName);
-			dischargeMode += "/set/discharge";
+      //Set topic names to include the deviceName.
+      String standbyMode(deviceName);
+      standbyMode += "/set/standby";
+      String autoMode(deviceName);
+      autoMode += "/set/auto";
+      String chargeMode(deviceName);
+      chargeMode += "/set/charge";
+      String dischargeMode(deviceName);
+      dischargeMode += "/set/discharge";
 
-			// Subscribe or resubscribe to topics.
-			if(
-				mqtt.subscribe(const_cast<char*>(standbyMode.c_str())) &&
-				mqtt.subscribe(const_cast<char*>(autoMode.c_str())) &&
-				mqtt.subscribe(const_cast<char*>(chargeMode.c_str())) &&
-				mqtt.subscribe(const_cast<char*>(dischargeMode.c_str())))
-			{
-				updateOLED("NULL", "NULL", "NULL", "");
-				break;
-			}
-		}
+      // Subscribe or resubscribe to topics.
+      if(
+        mqtt.subscribe(const_cast<char*>(standbyMode.c_str())) &&
+        mqtt.subscribe(const_cast<char*>(autoMode.c_str())) &&
+        mqtt.subscribe(const_cast<char*>(chargeMode.c_str())) &&
+        mqtt.subscribe(const_cast<char*>(dischargeMode.c_str())))
+      {
+        updateOLED("NULL", "NULL", "NULL", "");
+        break;
+      }
+    }
 
-		Serial.print("failed, rc=");
-		Serial.print(mqtt.state());
-		Serial.println(" try again in 5 seconds");
-		updateOLED("NULL", "NULL", "NULL", "MQTT...");
+    Serial.print("failed, rc=");
+    Serial.print(mqtt.state());
+    Serial.println(" try again in 5 seconds");
+    updateOLED("NULL", "NULL", "NULL", "MQTT...");
 
-		// Wait 5 seconds before retrying
-		delay(5000);
-	}
+    // Wait 5 seconds before retrying
+    delay(5000);
+  }
 }
 
 /**
@@ -542,363 +546,363 @@ void mqttReconnect()
  */
 void flushRS485()
 {
-	RS485Serial.flush();
-	delay(200);
+  RS485Serial.flush();
+  delay(200);
 
-	while(RS485Serial.available())
-		RS485Serial.read();
+  while(RS485Serial.available())
+    RS485Serial.read();
 }
 
 int sendModbus(uint8_t frame[], byte frameSize, modbusResponse *resp)
 {
-	//Calculate the CRC and overwrite the last two bytes.
-	calcCRC(frame, frameSize);
+  //Calculate the CRC and overwrite the last two bytes.
+  calcCRC(frame, frameSize);
 
-	// Make sure there are no spurious characters in the in/out buffer.
-	flushRS485();
+  // Make sure there are no spurious characters in the in/out buffer.
+  flushRS485();
 
-	//Send
-	digitalWrite(SERIAL_COMMUNICATION_CONTROL_PIN, RS485_TX);
-	RS485Serial.write(frame, frameSize);
+  //Send
+  digitalWrite(SERIAL_COMMUNICATION_CONTROL_PIN, RS485_TX);
+  RS485Serial.write(frame, frameSize);
 
-	// It's important to reset the SERIAL_COMMUNICATION_CONTROL_PIN as soon as
-	// we finish sending so that the serial port can start to buffer the response.
-	digitalWrite(SERIAL_COMMUNICATION_CONTROL_PIN, RS485_RX);
-	return listen(resp);
+  // It's important to reset the SERIAL_COMMUNICATION_CONTROL_PIN as soon as
+  // we finish sending so that the serial port can start to buffer the response.
+  digitalWrite(SERIAL_COMMUNICATION_CONTROL_PIN, RS485_RX);
+  return listen(resp);
 }
 
 // Listen for a response.
 int listen(modbusResponse *resp)
 {
-	uint8_t		inFrame[64];
-	uint8_t		inByteNum = 0;
-	uint8_t		inFrameSize = 0;
-	uint8_t		inFunctionCode = 0;
-	uint8_t		inDataBytes = 0;
-	int		done = 0;
-	modbusResponse	dummy;
+  uint8_t   inFrame[64];
+  uint8_t   inByteNum = 0;
+  uint8_t   inFrameSize = 0;
+  uint8_t   inFunctionCode = 0;
+  uint8_t   inDataBytes = 0;
+  int   done = 0;
+  modbusResponse  dummy;
 
-	if(!resp)
-		resp = &dummy;      // Just in case we ever want to interpret here.
+  if(!resp)
+    resp = &dummy;      // Just in case we ever want to interpret here.
 
-	resp->dataSize = 0;
-	resp->errorLevel = 0;
+  resp->dataSize = 0;
+  resp->errorLevel = 0;
 
-	while((!done) && (inByteNum < sizeof(inFrame)))
-	{
-		int tries = 0;
+  while((!done) && (inByteNum < sizeof(inFrame)))
+  {
+    int tries = 0;
 
-		while((!RS485Serial.available()) && (tries++ < RS485_TRIES))
-			delay(50);
+    while((!RS485Serial.available()) && (tries++ < RS485_TRIES))
+      delay(50);
 
-		if(tries >= RS485_TRIES)
-		{
-			Serial.println("Timeout waiting for RS485 response.");
-			break;
-		}
+    if(tries >= RS485_TRIES)
+    {
+      Serial.println("Timeout waiting for RS485 response.");
+      break;
+    }
 
-		inFrame[inByteNum] = RS485Serial.read();
+    inFrame[inByteNum] = RS485Serial.read();
 
-		//Process the byte
-		switch(inByteNum)
-		{
-			case 0:
-				if(inFrame[inByteNum] != SOFAR_SLAVE_ID)   //If we're looking for the first byte but it dosn't match the slave ID, we're just going to drop it.
-					inByteNum--;          // Will be incremented again at the end of the loop.
-				break;
+    //Process the byte
+    switch(inByteNum)
+    {
+      case 0:
+        if(inFrame[inByteNum] != SOFAR_SLAVE_ID)   //If we're looking for the first byte but it dosn't match the slave ID, we're just going to drop it.
+          inByteNum--;          // Will be incremented again at the end of the loop.
+        break;
 
-			case 1:
-				//This is the second byte in a frame, where the function code lives.
-				inFunctionCode = inFrame[inByteNum];
-				break;
+      case 1:
+        //This is the second byte in a frame, where the function code lives.
+        inFunctionCode = inFrame[inByteNum];
+        break;
 
-			case 2:
-				//This is the third byte in a frame, which tells us the number of data bytes to follow.
-				if((inDataBytes = inFrame[inByteNum]) > sizeof(inFrame))
-				inByteNum = -1;       // Frame is too big?
-				break;
+      case 2:
+        //This is the third byte in a frame, which tells us the number of data bytes to follow.
+        if((inDataBytes = inFrame[inByteNum]) > sizeof(inFrame))
+        inByteNum = -1;       // Frame is too big?
+        break;
 
-			default:
-				if(inByteNum < inDataBytes + 3)
-				{
-					//This is presumed to be a data byte.
-					resp->data[inByteNum - 3] = inFrame[inByteNum];
-					resp->dataSize++;
-				}
-				else if(inByteNum > inDataBytes + 3)
-					done = 1;
-		}
+      default:
+        if(inByteNum < inDataBytes + 3)
+        {
+          //This is presumed to be a data byte.
+          resp->data[inByteNum - 3] = inFrame[inByteNum];
+          resp->dataSize++;
+        }
+        else if(inByteNum > inDataBytes + 3)
+          done = 1;
+    }
 
-		inByteNum++;
-	}
+    inByteNum++;
+  }
 
-	inFrameSize = inByteNum;
+  inFrameSize = inByteNum;
 
-	/**
-	* Now check to see if the last two bytes are a valid CRC.
-	* If we don't have a response pointer we don't care.
-	**/
-	if(inFrameSize < 5)
-	{
-		resp->errorLevel = 2;
-		resp->errorMessage = "Response too short";
-	}
-	else if(checkCRC(inFrame, inFrameSize))
-	{
-		resp->errorLevel = 0;
-		resp->errorMessage = "Valid data frame";
-	}
-	else
-	{
-		resp->errorLevel = 1;
-		resp->errorMessage = "Error: invalid data frame";
-	}
+  /**
+  * Now check to see if the last two bytes are a valid CRC.
+  * If we don't have a response pointer we don't care.
+  **/
+  if(inFrameSize < 5)
+  {
+    resp->errorLevel = 2;
+    resp->errorMessage = "Response too short";
+  }
+  else if(checkCRC(inFrame, inFrameSize))
+  {
+    resp->errorLevel = 0;
+    resp->errorMessage = "Valid data frame";
+  }
+  else
+  {
+    resp->errorLevel = 1;
+    resp->errorMessage = "Error: invalid data frame";
+  }
 
-	if(resp->errorLevel)
-		Serial.println(resp->errorMessage);
+  if(resp->errorLevel)
+    Serial.println(resp->errorMessage);
 
-	return -resp->errorLevel;
+  return -resp->errorLevel;
 }
 
 int readSingleReg(uint8_t id, uint16_t reg, modbusResponse *rs)
 {
-	uint8_t	frame[] = { id, MODBUS_FN_READSINGLEREG, reg >> 8, reg & 0xff, 0, 0x01, 0, 0 };
+  uint8_t frame[] = { id, MODBUS_FN_READSINGLEREG, reg >> 8, reg & 0xff, 0, 0x01, 0, 0 };
 
-	return sendModbus(frame, sizeof(frame), rs);
+  return sendModbus(frame, sizeof(frame), rs);
 }
 
 int sendPassiveCmd(uint8_t id, uint16_t cmd, uint16_t param, String pubTopic)
 {
-	modbusResponse	rs;
-	uint8_t	frame[] = { id, SOFAR_FN_PASSIVEMODE, cmd >> 8, cmd & 0xff, param >> 8, param & 0xff, 0, 0 };
-	int		err = -1;
-	String		retMsg;
+  modbusResponse  rs;
+  uint8_t frame[] = { id, SOFAR_FN_PASSIVEMODE, cmd >> 8, cmd & 0xff, param >> 8, param & 0xff, 0, 0 };
+  int   err = -1;
+  String    retMsg;
 
-	if(sendModbus(frame, sizeof(frame), &rs))
-		retMsg = rs.errorMessage;
-	else if(rs.dataSize != 2)
-		retMsg = "Reponse is " + String(rs.dataSize) + " bytes?";
-	else
-	{
-		retMsg = String((rs.data[0] << 8) | (rs.data[1] & 0xff));
-		err = 0;
-	}
+  if(sendModbus(frame, sizeof(frame), &rs))
+    retMsg = rs.errorMessage;
+  else if(rs.dataSize != 2)
+    retMsg = "Reponse is " + String(rs.dataSize) + " bytes?";
+  else
+  {
+    retMsg = String((rs.data[0] << 8) | (rs.data[1] & 0xff));
+    err = 0;
+  }
 
-	String topic(deviceName);
-	topic += "/response/" + pubTopic;
-	sendMqtt(const_cast<char*>(topic.c_str()), retMsg);
-	return err;
+  String topic(deviceName);
+  topic += "/response/" + pubTopic;
+  sendMqtt(const_cast<char*>(topic.c_str()), retMsg);
+  return err;
 }
 
 void sendMqtt(char* topic, String msg_str)
 {
-	char	msg[1000];
+  char  msg[1000];
 
-	mqtt.setBufferSize(512);
-	msg_str.toCharArray(msg, msg_str.length() + 1); //packaging up the data to publish to mqtt
+  mqtt.setBufferSize(512);
+  msg_str.toCharArray(msg, msg_str.length() + 1); //packaging up the data to publish to mqtt
 
-	if (!(mqtt.publish(topic, msg)))
-		Serial.println("MQTT publish failed");
+  if (!(mqtt.publish(topic, msg)))
+    Serial.println("MQTT publish failed");
 }
 
 void heartbeat()
 {
-	static unsigned long  lastRun = 0;
+  static unsigned long  lastRun = 0;
 
-	//Send a heartbeat
-	if(checkTimer(&lastRun, HEARTBEAT_INTERVAL))
-	{
-		uint8_t	sendHeartbeat[] = {SOFAR_SLAVE_ID, 0x49, 0x22, 0x01, 0x22, 0x02, 0x00, 0x00};
-		int	ret;
+  //Send a heartbeat
+  if(checkTimer(&lastRun, HEARTBEAT_INTERVAL))
+  {
+    uint8_t sendHeartbeat[] = {SOFAR_SLAVE_ID, 0x49, 0x22, 0x01, 0x22, 0x02, 0x00, 0x00};
+    int ret;
 
-		Serial.println("Send heartbeat");
+    Serial.println("Send heartbeat");
 
-		// This just makes the dot on the first line of the OLED screen flash on and off with
-		// the heartbeat and clears any previous RS485 error massage that might still be there.
-		if(!(ret = sendModbus(sendHeartbeat, sizeof(sendHeartbeat), NULL)))
-		{
-			String flashDot;
+    // This just makes the dot on the first line of the OLED screen flash on and off with
+    // the heartbeat and clears any previous RS485 error massage that might still be there.
+    if(!(ret = sendModbus(sendHeartbeat, sizeof(sendHeartbeat), NULL)))
+    {
+      String flashDot;
 
-			if (oledLine2 == "Online")
-				flashDot = "Online.";
+      if (oledLine2 == "Online")
+        flashDot = "Online.";
 
-			if (oledLine2 == "Online.")
-				flashDot = "Online";
+      if (oledLine2 == "Online.")
+        flashDot = "Online";
 
-			if (oledLine3 == "RS485")
-				oledLine3 = "";
+      if (oledLine3 == "RS485")
+        oledLine3 = "";
 
-			if (oledLine4 == "ERROR")
-				oledLine4 = "";
+      if (oledLine4 == "ERROR")
+        oledLine4 = "";
 
-			updateOLED("NULL", flashDot, "NULL", "NULL");
-		}
-		else
-		{
-			Serial.print("Bad heartbeat ");
-			Serial.println(ret);
-			updateOLED("NULL", "NULL", "RS485", "ERROR");
-		}
+      updateOLED("NULL", flashDot, "NULL", "NULL");
+    }
+    else
+    {
+      Serial.print("Bad heartbeat ");
+      Serial.println(ret);
+      updateOLED("NULL", "NULL", "RS485", "ERROR");
+    }
 
-		//Flash the LED
-		digitalWrite(LED_BUILTIN, LOW);
-		delay(4);
-		digitalWrite(LED_BUILTIN, HIGH);
-	}
+    //Flash the LED
+    digitalWrite(LED_BUILTIN, LOW);
+    delay(4);
+    digitalWrite(LED_BUILTIN, HIGH);
+  }
 }
 
 void updateRunstate()
 {
-	static unsigned long	lastRun = 0;
+  static unsigned long  lastRun = 0;
 
-	//Check the runstate
-	if(checkTimer(&lastRun, RUNSTATE_INTERVAL))
-	{
-		modbusResponse  response;
+  //Check the runstate
+  if(checkTimer(&lastRun, RUNSTATE_INTERVAL))
+  {
+    modbusResponse  response;
 
-		Serial.print("Get runstate: ");
+    Serial.print("Get runstate: ");
 
-		if(!readSingleReg(SOFAR_SLAVE_ID, SOFAR_REG_RUNSTATE, &response))
-		{
-			INVERTER_RUNNINGSTATE = ((response.data[0] << 8) | response.data[1]);
-			Serial.println(INVERTER_RUNNINGSTATE);
+    if(!readSingleReg(SOFAR_SLAVE_ID, SOFAR_REG_RUNSTATE, &response))
+    {
+      INVERTER_RUNNINGSTATE = ((response.data[0] << 8) | response.data[1]);
+      Serial.println(INVERTER_RUNNINGSTATE);
 
-			switch(INVERTER_RUNNINGSTATE)
-			{
-				case waiting:
-					if (BATTERYSAVE)
-						updateOLED("NULL", "NULL", "Batt Save", "Waiting");
-					else
-						updateOLED("NULL", "NULL", "Standby", "");
-					break;
+      switch(INVERTER_RUNNINGSTATE)
+      {
+        case waiting:
+          if (BATTERYSAVE)
+            updateOLED("NULL", "NULL", "Batt Save", "Waiting");
+          else
+            updateOLED("NULL", "NULL", "Standby", "");
+          break;
 
-				case check:
-					updateOLED("NULL", "NULL", "Checking", "NULL");
-					break;
+        case check:
+          updateOLED("NULL", "NULL", "Checking", "NULL");
+          break;
 
-				case charging:
-					updateOLED("NULL", "NULL", HUMAN_CHARGING, String(batteryWatts())+"W");
-					break;
+        case charging:
+          updateOLED("NULL", "NULL", HUMAN_CHARGING, String(batteryWatts())+"W");
+          break;
 
 #ifdef INVERTER_ME3000
-				case checkDischarge:
-					updateOLED("NULL", "NULL", "Check Dis", "NULL");
-					break;
+        case checkDischarge:
+          updateOLED("NULL", "NULL", "Check Dis", "NULL");
+          break;
 #endif
-				case discharging:
-					updateOLED("NULL", "NULL", HUMAN_DISCHARGING, String(batteryWatts())+"W");
-					break;
+        case discharging:
+          updateOLED("NULL", "NULL", HUMAN_DISCHARGING, String(batteryWatts())+"W");
+          break;
 
-				case epsState:
-					updateOLED("NULL", "NULL", "EPS State", "NULL");
-					break;
+        case epsState:
+          updateOLED("NULL", "NULL", "EPS State", "NULL");
+          break;
 
-				case faultState:
-					updateOLED("NULL", "NULL", "FAULT", "NULL");
-					break;
+        case faultState:
+          updateOLED("NULL", "NULL", "FAULT", "NULL");
+          break;
 
-				case permanentFaultState:
-					updateOLED("NULL", "NULL", "PERMFAULT", "NULL");
-					break;
+        case permanentFaultState:
+          updateOLED("NULL", "NULL", "PERMFAULT", "NULL");
+          break;
 
-				default:
-					updateOLED("NULL", "NULL", "Runstate?", "NULL");
-					break;
-			}
-		}
-		else
-		{
-			Serial.println(response.errorMessage);
-			updateOLED("NULL", "NULL", "CRC-FAULT", "NULL");
-		}
-	}
+        default:
+          updateOLED("NULL", "NULL", "Runstate?", "NULL");
+          break;
+      }
+    }
+    else
+    {
+      Serial.println(response.errorMessage);
+      updateOLED("NULL", "NULL", "CRC-FAULT", "NULL");
+    }
+  }
 }
 
 unsigned int batteryWatts()
 { 
-	if(INVERTER_RUNNINGSTATE == charging || INVERTER_RUNNINGSTATE == discharging)
-	{
-		modbusResponse  response;
+  if(INVERTER_RUNNINGSTATE == charging || INVERTER_RUNNINGSTATE == discharging)
+  {
+    modbusResponse  response;
 
-		if(!readSingleReg(SOFAR_SLAVE_ID, SOFAR_REG_BATTW, &response))
-		{
-			unsigned int w = ((response.data[0] << 8) | response.data[1]);
+    if(!readSingleReg(SOFAR_SLAVE_ID, SOFAR_REG_BATTW, &response))
+    {
+      unsigned int w = ((response.data[0] << 8) | response.data[1]);
 
-			switch(INVERTER_RUNNINGSTATE)
-			{
-				case charging:
-					w = w*10;
-					break;
+      switch(INVERTER_RUNNINGSTATE)
+      {
+        case charging:
+          w = w*10;
+          break;
 
-				case discharging:
-					w = (65535 - w)*10;
-			}
+        case discharging:
+          w = (65535 - w)*10;
+      }
 
-			return w;
-		}
-		else
-		{
-			Serial.println(response.errorMessage);
-			updateOLED("NULL", "NULL", "CRC-FAULT", "NULL");
-		}
-	}
+      return w;
+    }
+    else
+    {
+      Serial.println(response.errorMessage);
+      updateOLED("NULL", "NULL", "CRC-FAULT", "NULL");
+    }
+  }
 
-	return 0;
+  return 0;
 }
 
 void setup()
 {
-	Serial.begin(9600);
-	pinMode(LED_BUILTIN, OUTPUT);
+  Serial.begin(9600);
+  pinMode(LED_BUILTIN, OUTPUT);
 
-	pinMode(SERIAL_COMMUNICATION_CONTROL_PIN, OUTPUT);
-	digitalWrite(SERIAL_COMMUNICATION_CONTROL_PIN, RS485_RX);
-	RS485Serial.begin(9600);
+  pinMode(SERIAL_COMMUNICATION_CONTROL_PIN, OUTPUT);
+  digitalWrite(SERIAL_COMMUNICATION_CONTROL_PIN, RS485_RX);
+  RS485Serial.begin(9600, SERIAL_8N1, RXPin, TXPin);
 
-	delay(500);
+  delay(500);
 
-	//Turn on the OLED
-	display.begin(SSD1306_SWITCHCAPVCC, 0x3C);  // initialize OLED with the I2C addr 0x3C (for the 64x48)
-	display.clearDisplay();
-	display.display();
-	updateOLED(deviceName, "connecting", "", version);
+  //Turn on the OLED
+  display.begin(SSD1306_SWITCHCAPVCC, 0x3C);  // initialize OLED with the I2C addr 0x3C (for the 64x48)
+  display.clearDisplay();
+  display.display();
+  updateOLED(deviceName, "connecting", "", version);
 
-	setup_wifi();
+  setup_wifi();
 
-	mqtt.setServer(MQTT_SERVER, MQTT_PORT);
-	mqtt.setCallback(mqttCallback);
+  mqtt.setServer(MQTT_SERVER, MQTT_PORT);
+  mqtt.setCallback(mqttCallback);
 
-	//Wake up the inverter and put it in auto mode to begin with.
-	heartbeat();
-	mqttReconnect();
-	Serial.println("Set start up mode: Auto");
-	sendPassiveCmd(SOFAR_SLAVE_ID, SOFAR_FN_AUTO, 0, "startup_auto");
+  //Wake up the inverter and put it in auto mode to begin with.
+  heartbeat();
+  mqttReconnect();
+  Serial.println("Set start up mode: Auto");
+  sendPassiveCmd(SOFAR_SLAVE_ID, SOFAR_FN_AUTO, 0, "startup_auto");
 }
 
 void loop()
 {
-	//make sure mqtt is still connected
-	if((!mqtt.connected()) || !mqtt.loop())
-	{
-		updateOLED("NULL", "Offline", "NULL", "NULL");
-		mqttReconnect();
-	}
-	else
-		updateOLED("NULL", "Online", "NULL", "NULL");
+  //make sure mqtt is still connected
+  if((!mqtt.connected()) || !mqtt.loop())
+  {
+    updateOLED("NULL", "Offline", "NULL", "NULL");
+    mqttReconnect();
+  }
+  else
+    updateOLED("NULL", "Online", "NULL", "NULL");
 
-	//Send a heartbeat to keep the inverter awake
-	heartbeat();
+  //Send a heartbeat to keep the inverter awake
+  heartbeat();
 
-	//Check and display the runstate
-	updateRunstate();
+  //Check and display the runstate
+  updateRunstate();
 
-	//Transmit all data to MQTT
-	sendData();
+  //Transmit all data to MQTT
+  sendData();
 
-	//Set battery save state
-	batterySave();
+  //Set battery save state
+  batterySave();
 
-	delay(100);
+  delay(100);
 }
 
 //calcCRC and checkCRC are based on...
@@ -906,33 +910,33 @@ void loop()
 
 void calcCRC(uint8_t frame[], byte frameSize) 
 {
-	unsigned int temp = 0xffff, flag;
+  unsigned int temp = 0xffff, flag;
 
-	for(unsigned char i = 0; i < frameSize - 2; i++)
-	{
-		temp = temp ^ frame[i];
+  for(unsigned char i = 0; i < frameSize - 2; i++)
+  {
+    temp = temp ^ frame[i];
 
-		for(unsigned char j = 1; j <= 8; j++)
-		{
-			flag = temp & 0x0001;
-			temp >>= 1;
+    for(unsigned char j = 1; j <= 8; j++)
+    {
+      flag = temp & 0x0001;
+      temp >>= 1;
 
-			if(flag)
-				temp ^= 0xA001;
-		}
-	}
+      if(flag)
+        temp ^= 0xA001;
+    }
+  }
 
-	// Bytes are reversed.
-	frame[frameSize - 2] = temp & 0xff;
-	frame[frameSize - 1] = temp >> 8;
+  // Bytes are reversed.
+  frame[frameSize - 2] = temp & 0xff;
+  frame[frameSize - 1] = temp >> 8;
 }
 
 bool checkCRC(uint8_t frame[], byte frameSize) 
 {
-	unsigned int calculated_crc, received_crc;
+  unsigned int calculated_crc, received_crc;
 
-	received_crc = ((frame[frameSize-2] << 8) | frame[frameSize-1]);
-	calcCRC(frame, frameSize);
-	calculated_crc = ((frame[frameSize-2] << 8) | frame[frameSize-1]);
-	return (received_crc = calculated_crc);
+  received_crc = ((frame[frameSize-2] << 8) | frame[frameSize-1]);
+  calcCRC(frame, frameSize);
+  calculated_crc = ((frame[frameSize-2] << 8) | frame[frameSize-1]);
+  return (received_crc = calculated_crc);
 }
