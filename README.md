@@ -1,6 +1,8 @@
 # Sofar2mqtt
 ## A smart home interface for Sofar solar and battery inverters.
 
+ESP32 version, compiles not yet tested on ME3000SP
+
 Supported models:  
 
 ME3000SP - Full support  
